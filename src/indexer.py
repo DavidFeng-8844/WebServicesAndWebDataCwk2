@@ -40,7 +40,11 @@ logger = logging.getLogger(__name__)
 # Constants
 # ---------------------------------------------------------------------------
 
-DEFAULT_INDEX_PATH: str = "search_index.json"
+# Robustly determine the project root directory (one level up from src/)
+_MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.dirname(_MODULE_DIR)
+
+DEFAULT_INDEX_PATH: str = os.path.join(_PROJECT_ROOT, "search_index.json")
 
 # Regex: word-boundary tokeniser that keeps alphabetic + numeric tokens ≥ 1 char.
 _TOKEN_PATTERN: re.Pattern[str] = re.compile(r"[a-zA-Z0-9]+")
