@@ -1,4 +1,4 @@
-# AI Declaration and Evaluation Template
+# AI Declaration and Evaluation
 
 *Student Name: [Yujie Feng]*  
 *Student ID: [201691089]*  
