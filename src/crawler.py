@@ -44,6 +44,22 @@ logger = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# Custom Exceptions
+# ---------------------------------------------------------------------------
+
+class CrawlerError(Exception):
+    """Base class for crawler exceptions."""
+    pass
+
+class PolitenessWindowViolation(CrawlerError):
+    """Raised when the crawler attempts to fetch faster than the politeness delay."""
+    pass
+
+class NetworkFetchError(CrawlerError):
+    """Raised when a network request fails after maximum retries."""
+    pass
+
+# ---------------------------------------------------------------------------
 # Data classes
 # ---------------------------------------------------------------------------
 
@@ -165,6 +181,9 @@ class WebCrawler:
     def crawl(self) -> List[PageData]:
         """Execute the crawl and return a list of :class:`PageData` objects.
 
+        Time Complexity: O(P * E) where P is max_pages and E is edges/links per page.
+        Space Complexity: O(P) to store visited set and pages.
+
         Returns:
             A list of successfully crawled and parsed pages.
         """
@@ -184,7 +203,12 @@ class WebCrawler:
 
             self._visited.add(normalised)
 
-            html: Optional[str] = self._fetch(normalised)
+            try:
+                html: str = self._fetch(normalised)
+            except NetworkFetchError as e:
+                logger.error("Skipping %s due to NetworkFetchError: %s", url, e)
+                continue
+
             if html is None:
                 continue
 
@@ -206,23 +230,32 @@ class WebCrawler:
 
     # -- private helpers ----------------------------------------------------
 
-    def _wait_for_politeness(self) -> None:
-        """Block until the politeness window has elapsed since the last request."""
+    def _wait_for_politeness(self, strict: bool = False) -> None:
+        """Block until the politeness window has elapsed since the last request.
+        
+        Args:
+            strict: If True, raises PolitenessWindowViolation instead of sleeping.
+        """
 
         elapsed: float = time.time() - self._last_request_time
         if elapsed < self._politeness_delay:
+            if strict:
+                raise PolitenessWindowViolation(f"Requested too fast. Elapsed: {elapsed:.2f}s")
             sleep_time: float = self._politeness_delay - elapsed
             logger.debug("Politeness delay: sleeping %.2fs", sleep_time)
             time.sleep(sleep_time)
 
-    def _fetch(self, url: str) -> Optional[str]:
+    def _fetch(self, url: str) -> str:
         """Fetch raw HTML from *url* with retries and exponential back-off.
 
         Args:
             url: The fully-qualified URL to request.
 
         Returns:
-            The response body as a string, or ``None`` on failure.
+            The response body as a string.
+            
+        Raises:
+            NetworkFetchError: If the URL cannot be fetched after MAX_RETRIES.
         """
 
         for attempt in range(1, MAX_RETRIES + 1):
@@ -246,7 +279,7 @@ class WebCrawler:
                 # Do not retry client errors (4xx) other than 429.
                 if exc.response is not None and 400 <= exc.response.status_code < 500:
                     if exc.response.status_code != 429:
-                        return None
+                        raise NetworkFetchError(f"Client error {status_code} for {url}")
             except requests.exceptions.ConnectionError:
                 logger.warning(
                     "Connection error for %s (attempt %d/%d)",
@@ -260,7 +293,7 @@ class WebCrawler:
                 )
             except requests.exceptions.RequestException as exc:
                 logger.error("Unexpected request error for %s: %s", url, exc)
-                return None
+                raise NetworkFetchError(f"Unexpected request error: {exc}")
 
             # Exponential back-off before retry.
             backoff: float = RETRY_BACKOFF ** attempt
@@ -268,7 +301,7 @@ class WebCrawler:
             time.sleep(backoff)
 
         logger.error("Failed to fetch %s after %d attempts", url, MAX_RETRIES)
-        return None
+        raise NetworkFetchError(f"Failed to fetch {url} after {MAX_RETRIES} attempts.")
 
     def _parse(self, url: str, html: str) -> Optional[PageData]:
         """Parse *html* and build a :class:`PageData` object.

@@ -44,7 +44,7 @@ logger = logging.getLogger(__name__)
 _MODULE_DIR = os.path.dirname(os.path.abspath(__file__))
 _PROJECT_ROOT = os.path.dirname(_MODULE_DIR)
 
-DEFAULT_INDEX_PATH: str = os.path.join(_PROJECT_ROOT, "search_index.json")
+DEFAULT_INDEX_PATH: str = os.path.join(_PROJECT_ROOT, "data", "search_index.json")
 
 # Regex: word-boundary tokeniser that keeps alphabetic + numeric tokens ≥ 1 char.
 _TOKEN_PATTERN: re.Pattern[str] = re.compile(r"[a-zA-Z0-9]+")
@@ -167,6 +167,11 @@ class InvertedIndex:
 
     def build(self, pages: List[PageData]) -> None:
         """Build the inverted index from a list of crawled pages.
+
+        Time Complexity: O(N * L) where N is the number of pages, and L is the average
+                         number of tokens per page. We iterate through each token once.
+        Space Complexity: O(V + N * L) where V is the vocabulary size (unique terms),
+                          and we store positional occurrences for each token.
 
         Args:
             pages: A list of :class:`PageData` objects produced by the crawler.
@@ -312,6 +317,9 @@ class InvertedIndex:
         where *N* is the total document count and *df* is the document
         frequency of *term*.
 
+        Time Complexity: O(1) - Dictionary lookup is constant time.
+        Space Complexity: O(1) - No extra space allocated.
+
         Args:
             term: The normalised term.
 
@@ -334,6 +342,9 @@ class InvertedIndex:
 
         Tokens are defined as contiguous runs of alphanumeric characters.
         The output preserves order and duplicates (positional information).
+
+        Time Complexity: O(C) where C is the number of characters in the text.
+        Space Complexity: O(T) where T is the number of resulting tokens.
 
         Args:
             text: Raw text string.

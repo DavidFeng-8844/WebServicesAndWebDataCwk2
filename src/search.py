@@ -109,6 +109,11 @@ class SearchEngine:
             include_stop_words: If ``True``, stop-words are not removed from
                 the query.  By default, common stop-words are stripped.
 
+        Time Complexity: O(T * D * log(K)) where T is number of tokens, 
+                         D is number of documents containing the token, 
+                         and K is top_k.
+        Space Complexity: O(D) to store document scores and matched tokens.
+
         Returns:
             A list of :class:`SearchResult` objects sorted by descending score.
             Returns an empty list for empty or unparseable queries.
@@ -172,6 +177,9 @@ class SearchEngine:
 
         if not doc_scores:
             logger.info("No documents matched query '%s'.", query)
+            suggestions = self.get_suggestions(query)
+            if suggestions and " ".join(suggestions) != query.lower():
+                logger.info("Did you mean: %s?", " ".join(suggestions))
             return []
 
         # --- Bonus: all-terms coverage ------------------------------------
@@ -271,6 +279,54 @@ class SearchEngine:
 
         set_b = set(positions_b)
         return any((pos + 1) in set_b for pos in positions_a)
+
+    @staticmethod
+    def levenshtein_distance(s1: str, s2: str) -> int:
+        """Calculate the Levenshtein distance between two strings.
+        
+        Time Complexity: O(M * N) where M and N are the lengths of s1 and s2.
+        Space Complexity: O(N) where N is the length of s2.
+        """
+        if len(s1) < len(s2):
+            return SearchEngine.levenshtein_distance(s2, s1)
+        if len(s2) == 0:
+            return len(s1)
+        previous_row: List[int] = list(range(len(s2) + 1))
+        for i, c1 in enumerate(s1):
+            current_row: List[int] = [i + 1]
+            for j, c2 in enumerate(s2):
+                insertions: int = previous_row[j + 1] + 1
+                deletions: int = current_row[j] + 1
+                substitutions: int = previous_row[j] + (c1 != c2)
+                current_row.append(min(insertions, deletions, substitutions))
+            previous_row = current_row
+        return previous_row[-1]
+
+    def get_suggestions(self, query: str, max_distance: int = 2) -> List[str]:
+        """Provide query suggestions for misspelled terms.
+        
+        Time Complexity: O(T * V * L) where T is query tokens, V is vocabulary size, L is max word length.
+        Space Complexity: O(T) where T is the number of tokens.
+        """
+        tokens: List[str] = self._index.tokenise(query)
+        suggestions: List[str] = []
+        vocab: List[str] = list(self._index.index.keys())
+        
+        for token in tokens:
+            if token in self._index:
+                suggestions.append(token)
+            else:
+                best_match: str = token
+                min_dist: int = max_distance + 1
+                for word in vocab:
+                    if abs(len(word) - len(token)) > max_distance:
+                        continue
+                    dist: int = self.levenshtein_distance(token, word)
+                    if dist < min_dist:
+                        min_dist = dist
+                        best_match = word
+                suggestions.append(best_match)
+        return suggestions
 
     # -- dunder methods -----------------------------------------------------
 

@@ -1,7 +1,7 @@
 # AI Declaration and Evaluation Template
 
-*Student Name: [Your Name]*  
-*Student ID: [Your ID]*  
+*Student Name: [Yujie Feng]*  
+*Student ID: [201691089]*  
 *Coursework: Search Engine Tool (CWK2)*
 
 ## 1. Overview of GenAI Usage

@@ -4,10 +4,16 @@ A robust, modular, and publication-quality web crawler and search engine designe
 
 ## Overview
 
-This project implements a complete search engine pipeline comprising three core modules:
-1. **Crawler**: A polite, BFS-based web scraper that respects rate limits (6-second delay) and supports proxy configurations.
-2. **Indexer**: An inverted index builder that processes raw text into a normalized, case-insensitive index storing term frequency (TF), document frequency (DF), and positional data.
-3. **Search Engine**: A retrieval system utilizing Okapi BM25 and TF-IDF mathematical models for document ranking, enhanced with adjacency bonuses for phrase matching.
+This project implements a complete, publication-quality search engine pipeline comprising three core modules:
+1. **Crawler**: A polite, BFS-based web scraper that respects rate limits (6-second delay), supports proxy configurations, and uses robust custom exceptions (`NetworkFetchError`, `PolitenessWindowViolation`) for error recovery.
+2. **Indexer**: An inverted index builder that processes raw text into a normalized, case-insensitive index storing term frequency (TF), document frequency (DF), and positional data. Core operations are fully documented with Time/Space Big-O complexity analysis.
+3. **Search Engine**: A retrieval system utilizing Okapi BM25 and TF-IDF mathematical models for document ranking, enhanced with adjacency bonuses for phrase matching and Levenshtein-based query suggestions for typos.
+
+## Advanced Features & Outstanding Polish
+- **Query Suggestions**: Implements Levenshtein distance typo detection to recommend "Did you mean: X?" if a search yields no exact matches.
+- **Complexity Analysis**: Includes comprehensive Big-O Time and Space complexity comments for indexing and search operations.
+- **Defensive Programming**: Employs robust error handling, structured exceptions, and network backoffs.
+- **CI/CD Pipeline**: Automated GitHub Actions testing pipeline ensures that `pytest` runs successfully on every push or pull request.
 
 ## Architecture
 
@@ -49,7 +55,7 @@ python -m src.main
 
 ### CLI Commands
 
-* **`build`**: Crawls the target website, builds the inverted index, and saves it to `search_index.json`.
+* **`build`**: Crawls the target website, builds the inverted index, and saves it to `data/search_index.json`.
   > *Note: If you require a proxy (e.g., Clash), set `HTTP_PROXY` and `HTTPS_PROXY` environment variables before running this command.*
 * **`load`**: Loads the previously saved index from the disk into memory.
 * **`print <word>`**: Displays detailed index statistics (DF, IDF, and Term Positions) for a specific word.
