@@ -4,6 +4,8 @@ A robust, modular, and publication-quality web crawler and search engine designe
 
 ## Overview
 
+[![Watch the video](https://img.youtube.com/vi/ktcNG5CKBsA/maxresdefault.jpg) ](https://youtu.be/ktcNG5CKBsA)
+
 This project implements a complete, publication-quality search engine pipeline comprising three core modules:
 1. **Crawler**: A polite, BFS-based web scraper that respects rate limits (6-second delay), supports proxy configurations, and uses robust custom exceptions (`NetworkFetchError`, `PolitenessWindowViolation`) for error recovery.
 2. **Indexer**: An inverted index builder that processes raw text into a normalized, case-insensitive index storing term frequency (TF), document frequency (DF), and positional data. Core operations are fully documented with Time/Space Big-O complexity analysis.
