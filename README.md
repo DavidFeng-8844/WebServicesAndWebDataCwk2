@@ -4,6 +4,7 @@ A robust, modular, and publication-quality web crawler and search engine designe
 
 ## Overview
 
+**Demo Video**
 [![Watch the video](https://img.youtube.com/vi/ktcNG5CKBsA/maxresdefault.jpg) ](https://youtu.be/ktcNG5CKBsA)
 
 This project implements a complete, publication-quality search engine pipeline comprising three core modules:
